@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Forum</title>
+    <script src="index.js"></script>
+</head>
+<body>
+    <h1>My Posts</h1>
+    <div id="posts"></div>
+
+    <script>
+        async function loadPosts() {
+            const response = await fetch('/posts');
+            const posts = await response.json();
+            const postsDiv = document.getElementById('posts');
+            postsDiv.innerHTML = '';
+            posts.forEach(post => {
+                postsDiv.innerHTML += `<div><h2>${post.title}</h2><p>${post.content}</p><form onsubmit="submitComment(event, ${post.id})"><input type="text" id="name${post.id}" placeholder="Your Name"><textarea id="comment${post.id}" placeholder="Your Comment"></textarea><button type="submit">Submit</button></form><div id="comments${post.id}"></div></div>`;
+                loadComments(post.id);
+            });
+        }
+
+        async function loadComments(postId) {
+            const response = await fetch(`/posts/${postId}`);
+            const { comments } = await response.json();
+            const commentsDiv = document.getElementById(`comments${postId}`);
+            commentsDiv.innerHTML = '';
+            comments.forEach(comment => {
+                commentsDiv.innerHTML += `<p><strong>${comment.name}</strong>: ${comment.content}</p>`;
+            });
+        }
+
+        async function submitComment(event, postId) {
+            event.preventDefault();
+            const name = document.getElementById(`name${postId}`).value;
+            const content = document.getElementById(`comment${postId}`).value;
+            await fetch(`/posts/${postId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, content })
+            });
+            loadComments(postId);
+        }
+
+        loadPosts();
+    </script>
+</body>
+</html>
