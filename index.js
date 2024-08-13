@@ -26,7 +26,7 @@ app.get('/posts/:id', (req, res) => {
 });
 
 // Admin route to create a post
-app.post('/admin/post', (req, res) => {
+app.post('/admin/posts', (req, res) => {
     const { title, content } = req.body;
     const id = posts.length + 1;
     posts.push({ id, title, content, timestamp: new Date() });
