@@ -1,11 +1,14 @@
+require('dotenv').config();  // Load environment variables from .env file
+
 const express = require('express');
-const jwt = require('jsonwebtoken'); // Import jsonwebtoken package
+const jwt = require('jsonwebtoken');
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const SECRET_KEY = "your-secret-key"; // Replace with a secure secret key
+// Use the secret key from environment variables
+const SECRET_KEY = process.env.JWT_SECRET;
 
 // In-memory storage for users, posts, and comments
 let users = [{ username: "admin", password: "password" }]; // Example user
@@ -17,7 +20,7 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (token == null) return res.sendStatus(401);
+    if (!token) return res.sendStatus(401);
 
     jwt.verify(token, SECRET_KEY, (err, user) => {
         if (err) return res.sendStatus(403);
