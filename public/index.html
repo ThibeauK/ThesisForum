@@ -3,50 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Forum</title>
-    <script src="index.js"></script>
+    <title>Thesis Forum</title>
 </head>
 <body>
-    <h1>My Posts</h1>
-    <div id="posts"></div>
+    <h1>Welcome to Thesis Forum</h1>
+
+    <!-- Login form -->
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="loginMessage"></div>
+
+    <!-- Post creation (for admin after login) -->
+    <div id="postSection" style="display: none;">
+        <h2>Create Post</h2>
+        <form id="postForm">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+            <label for="content">Content:</label>
+            <textarea id="content" name="content" required></textarea>
+            <button type="submit">Create Post</button>
+        </form>
+        <div id="postMessage"></div>
+    </div>
 
     <script>
-        async function loadPosts() {
-            const response = await fetch('/posts');
-            const posts = await response.json();
-            const postsDiv = document.getElementById('posts');
-            postsDiv.innerHTML = '';
-            posts.forEach(post => {
-                postsDiv.innerHTML += `<div><h2>${post.title}</h2><p>${post.content}</p><form onsubmit="submitComment(event, ${post.id})"><input type="text" id="name${post.id}" placeholder="Your Name"><textarea id="comment${post.id}" placeholder="Your Comment"></textarea><button type="submit">Submit</button></form><div id="comments${post.id}"></div></div>`;
-                loadComments(post.id);
-            });
-        }
+        let token = null;
 
-        async function loadComments(postId) {
-            const response = await fetch(`/posts/${postId}`);
-            const { comments } = await response.json();
-            const commentsDiv = document.getElementById(`comments${postId}`);
-            commentsDiv.innerHTML = '';
-            comments.forEach(comment => {
-                commentsDiv.innerHTML += `<p><strong>${comment.name}</strong>: ${comment.content}</p>`;
-            });
-        }
-
-        async function submitComment(event, postId) {
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
             event.preventDefault();
-            const name = document.getElementById(`name${postId}`).value;
-            const content = document.getElementById(`comment${postId}`).value;
-            await fetch(`/posts/${postId}/comments`, {
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                token = data.token;
+                document.getElementById('loginMessage').innerText = 'Login successful!';
+                document.getElementById('postSection').style.display = 'block';
+            } else {
+                document.getElementById('loginMessage').innerText = 'Login failed: ' + data.message;
+            }
+        });
+
+        // Handle post creation form submission
+        document.getElementById('postForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            const response = await fetch('/api/posts', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, content })
+                body: JSON.stringify({ title, content })
             });
-            loadComments(postId);
-        }
+            
+            const data = await response.json();
 
-        loadPosts();
+            if (response.ok) {
+                document.getElementById('postMessage').innerText = 'Post created successfully!';
+            } else {
+                document.getElementById('postMessage').innerText = 'Error: ' + data.message;
+            }
+        });
     </script>
 </body>
 </html>
